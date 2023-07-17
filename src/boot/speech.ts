@@ -1,72 +1,83 @@
 import {Observable} from "rxjs";
 
 export default async ({app}) => {
-  let recorder: any = null;
-
+  // let recorder: any = null;
+// Set up audio context
+  const audioContext = new AudioContext();
+  let context;
+  let source;
+  let processor;
+  let ws;
 
   app.config.globalProperties.$speechToText = {
     start: (lang = "de-DE", message = "", continuous = false) => {
       return new Observable(subscriber => {
-        const socket = new WebSocket('ws://localhost:8001')
-          socket.onopen = () => {
-            navigator.mediaDevices
-              .getUserMedia({audio: true, video: false})
-              .then(handleSuccess);
+          ws = new WebSocket('ws://localhost:8001')
+          ws.onopen = async () => {
+            // Create a new audio context
+            // Create a new audio context
+            const AudioContext = window.AudioContext;
+            context = new AudioContext();
+
+            // Add your processor to the audio context
+            await context.audioWorklet.addModule('audio-processor.js');
+
+            // Get access to the microphone
+            const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+
+            // Create a new audio source from the microphone stream
+            source = context.createMediaStreamSource(stream);
+
+            // Create a new audio processor
+            processor = new AudioWorkletNode(context, 'audio-processor');
+
+            // Connect the audio source to the processor
+            source.connect(processor);
+
+            // Connect the processor to the context destination
+            processor.connect(context.destination);
+
+            // Listen for processor messages
+            processor.port.onmessage = (event) => {
+              const chunk = event.data.data;
+              const rate = event.data.rate;
+              console.log("chunk", chunk, rate)
+
+              const rateBuffer = new Uint32Array([rate]);
+
+              // Create a new buffer to hold the rate and the chunk
+              const combinedBuffer = new Uint8Array(rateBuffer.byteLength + chunk.byteLength);
+
+              // Add the rate and the chunk to the combined buffer
+              combinedBuffer.set(new Uint8Array(rateBuffer.buffer), 0);
+              combinedBuffer.set(new Uint8Array(chunk), rateBuffer.byteLength);
+              // Here you can send the audio chunk and the sample rate to your WebSocket server
+              ws.send(combinedBuffer.buffer);
+            };
+          }
+          ws.onmessage = (message) => {
+            const transcript = message.data
+              console.log('data', message)
+            if (transcript) {
+              console.log('transcript', transcript)
+            }
           }
 
-          const handleSuccess = async function (stream) {
-            console.log("micro input", stream)
-            recorder = new MediaRecorder(stream);
-            const data: any = [];
+          ws.onclose = () => {
+            console.log({event: 'onclose'})
+          }
 
-            recorder.ondataavailable = (event) => {
-              console.log("data event:", event)
-              data.push(event.data)
-              if (event.data.size > 0 && socket.readyState == 1) {
-                socket.send(event.data)
-              }
-            };
-
-            recorder.start(1000);
-
-            socket.onmessage = (message) => {
-              const transcript = message.data
-              if (transcript) {
-                console.log('transcript', transcript)
-              }
-            }
-
-            socket.onclose = () => {
-              console.log({ event: 'onclose' })
-            }
-
-            socket.onerror = (error) => {
-              console.log({ event: 'onerror', error })
-            }
-
-            const stopped = new Promise((resolve, reject) => {
-              recorder.onstop = resolve;
-              recorder.onerror = (event) => {
-                reject(event.name)
-              };
-            });
-
-            Promise.all([stopped]).then(() => {
-              console.log("data:", data)
-
-              // Stop the microphone tracks
-              const tracks = stream.getTracks();
-              tracks.forEach(track => track.stop());
-            });
-          };
+          ws.onerror = (error) => {
+            console.log({event: 'onerror', error})
+          }
         }
       );
     },
     stop: () => {
-      if (recorder != null) {
-        console.log("stop recorder...")
-        recorder.stop();
-      }
+      // Disconnect the audio source and processor
+      source.disconnect();
+      processor.disconnect();
+      processor = null;  // Clear the processor
     }
   }
   ;
