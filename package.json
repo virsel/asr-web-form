@@ -15,12 +15,9 @@
   "dependencies": {
     "@quasar/extras": "^1.16.4",
     "core-js": "^3.6.5",
-    "deepspeech": "^0.9.3",
-    "mic": "^2.1.2",
-    "node-vad": "^1.1.4",
     "pinia": "^2.0.11",
     "quasar": "^2.6.0",
-    "recorder-js": "^1.0.7",
+    "rxjs": "^7.8.1",
     "tiny-emitter": "^2.1.0",
     "vue": "^3.0.0",
     "vue-i18n": "^9.2.2",

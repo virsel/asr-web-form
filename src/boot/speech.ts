@@ -1,4 +1,5 @@
 import {Observable} from "rxjs";
+import {nextTick} from "vue";
 
 export default async ({app}) => {
   // let recorder: any = null;
@@ -8,6 +9,7 @@ export default async ({app}) => {
   let source;
   let processor;
   let ws;
+  let stream;
 
   app.config.globalProperties.$speechToText = {
     start: (lang = "de-DE", message = "", continuous = false) => {
@@ -23,7 +25,7 @@ export default async ({app}) => {
             await context.audioWorklet.addModule('audio-processor.js');
 
             // Get access to the microphone
-            const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+            stream = await navigator.mediaDevices.getUserMedia({audio: true});
 
             // Create a new audio source from the microphone stream
             source = context.createMediaStreamSource(stream);
@@ -57,7 +59,7 @@ export default async ({app}) => {
           }
           ws.onmessage = (message) => {
             const transcript = message.data
-              console.log('data', message)
+            console.log('data', message)
             if (transcript) {
               console.log('transcript', transcript)
             }
@@ -74,9 +76,18 @@ export default async ({app}) => {
       );
     },
     stop: () => {
+      // Send a message to the processor to stop processing audio data
+      if (processor) {
+        processor.port.postMessage({ connected: false });
+      }
+
+      // Stop the MediaStreamTrack associated with the microphone
+      stream.getTracks().forEach(track => track.stop());
+
       // Disconnect the audio source and processor
       source.disconnect();
       processor.disconnect();
+
       processor = null;  // Clear the processor
     }
   }
