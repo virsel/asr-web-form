@@ -19,7 +19,8 @@
     "noUnusedLocals": false
   },
   "include": [
-    "./src/**/*.ts"
+    "./src/**/*.ts",
+    "node_modules/@types/dom-speech-recognition/index.d.ts"
   ],
   "compileOnSave": false
 }

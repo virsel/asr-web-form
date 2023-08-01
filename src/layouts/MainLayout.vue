@@ -63,6 +63,17 @@
     </q-drawer>
 
     <q-page-container>
+
+        <q-banner :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-3'" v-if="isRecording">
+          <template v-slot:avatar>
+            <q-icon name="signal_wifi_off" color="primary" />
+          </template>
+          You have lost connection to the internet. This app is offline.
+          <template v-slot:action>
+            <q-btn flat color="primary" label="Turn on Wifi" />
+          </template>
+        </q-banner>
+
       <router-view/>
     </q-page-container>
   </q-layout>
@@ -70,6 +81,8 @@
 
 <script>
 import FieldSelectiveSpeechInput from '../components/FieldSelectiveSpeechInput'
+import { storeToRefs } from "pinia/dist/pinia";
+import { useFieldSelectiveSpeechInputStore } from "../stores/field-selective-speech-input";
 
 export default {
   name: 'MainLayout',
@@ -78,6 +91,7 @@ export default {
     return {
       leftDrawerOpen: this.$q.platform.is.desktop,
       lang: this.$i18n.locale,
+      isRecording: storeToRefs(useFieldSelectiveSpeechInputStore()).isRecording,
       langOptions: [
         { value: 'en-US', label: 'English' },
         { value: 'de-DE', label: 'Deutsch' }

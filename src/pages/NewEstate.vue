@@ -580,12 +580,12 @@ export default {
     },
     selectPreviousSpeechInputField() {
       const keys = Object.keys(this.speechInputFields)
-      if(this.previousSelectedSpeechInputField == null || [keys.indexOf(this.previousSelectedSpeechInputField) == 0])
+      if(this.previousSelectedSpeechInputField == null)
       {
-        this.selectSpeechInputFieldByKey(keys[keys.length - 1])
+        this.selectSpeechInputFieldByKey(keys[0])
       }
       else {
-        this.selectSpeechInputFieldByKey(keys[keys.indexOf(this.previousSelectedSpeechInputField) - 1])
+        this.selectSpeechInputFieldByKey(keys[keys.indexOf(this.previousSelectedSpeechInputField)])
       }
     },
     // speech input
