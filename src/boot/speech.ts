@@ -53,7 +53,6 @@ export default async ({app}) => {
               // Add the rate and the chunk to the combined buffer
               combinedBuffer.set(new Uint8Array(rateBuffer.buffer), 0);
               combinedBuffer.set(new Uint8Array(chunk), rateBuffer.byteLength);
-              // Here you can send the audio chunk and the sample rate to your WebSocket server
               ws.send(combinedBuffer.buffer);
             };
           }
