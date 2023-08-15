@@ -43,7 +43,7 @@ class AudioProcessor extends AudioWorkletProcessor {
       } else if (currentTime - this.silenceStart > this.debounceTime) {
         // If the silence has lasted for the debounce time, post the buffered audio data to the main thread
         const int16Array = Int16Array.from(this.buffer);
-        this.port.postMessage({data: int16Array.buffer, rate: sampleRate}, [int16Array.buffer]);
+        this.port.postMessage({data: int16Array.buffer, rate: sampleRate});
         // Clear the buffer and reset the speaking flag and silence start time
         this.buffer = [];
         this.speaking = false;

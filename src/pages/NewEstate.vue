@@ -97,19 +97,19 @@
                   </q-item>
                 </div>
               </div>
-              <div class="row">
+              <div class="row flex">
                 <div class="col-4 flex items-center">
                   <div class="text-body1 text-black">
                     <span class="text-info q-mr-sm speech-input-select-id">{{ speechInputFields.street.label }}</span>
                     Straße
                   </div>
                 </div>
-                <div class="col">
+                <div class="col full-width">
                   <q-item>
                     <q-input
                       :ref="(el) => { speechInputFields.street.ref = el }"
                       v-model="speechInputFieldValues.street"
-                      class="q-mr-sm field-selective-speech-input-element"
+                      class="q-mr-sm field-selective-speech-input-element full-width"
                       outlined
                       square
                       type="tek"
@@ -124,7 +124,7 @@
                     Nr.
                   </div>
                 </div>
-                <div class="col">
+                <div class="col-2">
                   <q-item>
                     <q-input
                       :ref="(el) => { speechInputFields.streetnr.ref = el }"
@@ -499,7 +499,6 @@ export default {
       document.body.classList.remove("field-selective-speach-input-enabled");
     });
     this.$bus.on("field-selective-speech-input_select", (transcript) => {
-      console.log("field-selective-speech-input_select", transcript);
       this.selectSpeechInputFieldBySpeechCommand(transcript);
     });
     this.$bus.on("field-selective-speech-input_input", (transcript) => {
@@ -517,6 +516,16 @@ export default {
     this.$bus.on("field-selective-speech-input_back", () => {
       this.selectPreviousSpeechInputField();
     });
+  },
+  beforeUnmount() {
+    this.$bus.off("field-selective-speech-input_start");
+    this.$bus.off("field-selective-speech-input_stop");
+    this.$bus.off("field-selective-speech-input_select");
+    this.$bus.off("field-selective-speech-input_input");
+    this.$bus.off("field-selective-speech-input_unselect");
+    this.$bus.off("field-selective-speech-input_clear");
+    this.$bus.off("field-selective-speech-input_next");
+    this.$bus.off("field-selective-speech-input_back");
   },
   methods: {
     // selection specific

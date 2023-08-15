@@ -2,19 +2,19 @@
   <div v-if="isRecording">
     <q-spinner-bars></q-spinner-bars>
     <q-toggle v-if="isFieldSelected" v-model="withCommandInput" class="cmd-speech-input-toggle" color="secondary"
-              label="Befehlseingabe" />
+              label="Befehlseingabe"/>
     <q-btn dense
            flat
            icon="stop"
            round
-           @click="stop()" />
+           @click="stop()"/>
   </div>
   <q-btn v-else
          dense
          flat
          icon="keyboard_voice"
          round
-         @click="record()" />
+         @click="record()"/>
 </template>
 
 <script>
@@ -44,19 +44,29 @@ const fieldInputCommands = {
 
 const extractCommand = (transcript, commands) => {
   for (const key in commands) {
-    if (commands.hasOwnProperty(key)) {
-      const regex = commands[key];
-      const match = transcript.match(regex);
-      if (match) {
-        const cmdType = recognizedCommandType[key];
-        const index = match.index;
-        transcript = transcript.slice(0, index);
-        return { fieldInput: transcript, commandType: cmdType };
-      }
+    const regex = commands[key];
+    const match = transcript.match(regex);
+    if (match) {
+      const cmdType = recognizedCommandType[key];
+      const index = match.index;
+      const matchLength = match[0].length;
+
+      const beforeMatch = transcript.slice(0, index); // part of transcript before the match
+      const afterMatch = transcript.slice(index + matchLength); // part of transcript after the match
+
+      return {
+        fieldInput: beforeMatch,
+        commandType: cmdType,
+        nextTranscript: afterMatch
+      };
     }
   }
 
-  return { fieldInput: transcript, commandType: recognizedCommandType.nothingRecognized };
+  return {
+    fieldInput: transcript,
+    commandType: recognizedCommandType.nothingRecognized,
+    nextTranscript: "" // or null if you prefer
+  };
 };
 
 export default {
@@ -76,14 +86,6 @@ export default {
   },
   methods: {
     record() {
-      // if (!this.$q.platform.is.chrome) {
-      //   this.$q.notify({
-      //     message: this.$t("unsupportedBrowserDesc"),
-      //     color: "negative",
-      //     icon: "sentiment_very_dissatisfied"
-      //   });
-      //   return false;
-      // }
       this.isRecording = true;
       this.$bus.emit("field-selective-speech-input_start");
       const handleSpeechInput = this.handleSpeechInput;
@@ -102,41 +104,42 @@ export default {
         });
     },
     handleSpeechInput(suc) {
+      console.log("speech input:", suc)
+      let res = {}
       if (this.isFieldSelected) {
-        this.handleSpeechInputFieldInputCmd(suc);
+        res = extractCommand(suc, fieldInputCommands);
+        this.handleSpeechInputFieldInputCmd(res);
       } else {
-        const res = extractCommand(suc, baseCommands);
+        res = extractCommand(suc, baseCommands);
         // no command recognized -> normal selection by label
         if (res.commandType === recognizedCommandType.nothingRecognized) {
           this.handleSpeechInputFieldSelection(suc);
-        }
-        else {
+        } else {
           this.handleBaseSpeechInputCmd(res)
         }
+      }
+
+      console.log("next transkript", res)
+      if (res?.nextTranscript?.trim() != "") {
+        this.handleSpeechInput(res.nextTranscript)
       }
     },
     handleBaseSpeechInputCmd(recognizedCmd) {
       if (recognizedCmd.commandType == recognizedCommandType.stopRecording) {
         this.stop()
       } else if (recognizedCmd.commandType == recognizedCommandType.nextField) {
-        console.log("next field,", recognizedCmd.fieldInput);
         this.$bus.emit("field-selective-speech-input_next");
       } else if (recognizedCmd.commandType == recognizedCommandType.previousField) {
-        console.log("back field,", recognizedCmd.fieldInput);
         this.$bus.emit("field-selective-speech-input_back");
       }
     },
-    handleSpeechInputFieldInputCmd(suc) {
-      const res = extractCommand(suc, fieldInputCommands);
-
+    handleSpeechInputFieldInputCmd(res) {
       if (!this.withCommandInput || res.commandType === recognizedCommandType.nothingRecognized) {
-        console.log("field input", res.fieldInput);
-        this.$bus.emit("field-selective-speech-input_input", suc);
+        this.$bus.emit("field-selective-speech-input_input", res.fieldInput);
       } else if (res.commandType == recognizedCommandType.clearField) {
-        console.log("clear field");
         this.$bus.emit("field-selective-speech-input_clear");
       } else if (res.commandType == recognizedCommandType.unselectField) {
-        console.log("unselect field,", res.fieldInput);
+        console.log("unselect", res)
         this.$bus.emit("field-selective-speech-input_unselect", res.fieldInput);
       }
     },
