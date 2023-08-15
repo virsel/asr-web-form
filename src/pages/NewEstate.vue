@@ -13,7 +13,7 @@
             <q-card-section>
               <div class="text-h6">Typ</div>
             </q-card-section>
-            <q-separator />
+            <q-separator/>
             <q-card-section>
               <div class="row">
                 <div class="col-4 flex items-center">
@@ -27,7 +27,7 @@
                       v-model="typeSelections.mainType" :options="optionsMainType"
                       map-options
                       outlined
-                      square />
+                      square/>
                   </q-item>
                 </div>
               </div>
@@ -56,7 +56,7 @@
             <q-card-section>
               <div class="text-h6">Lage</div>
             </q-card-section>
-            <q-separator />
+            <q-separator/>
             <q-card-section>
               <div class="row">
                 <div class="col-4 flex items-center">
@@ -151,7 +151,7 @@
             <q-card-section>
               <div class="text-h6">Kosten</div>
             </q-card-section>
-            <q-separator />
+            <q-separator/>
             <q-card-section>
               <div class="row">
                 <div class="col-4 flex items-center">
@@ -194,7 +194,7 @@
                       :options="costsOptions.netColdRentKind" label="Art"
                       map-options
                       outlined
-                      square />
+                      square/>
                   </q-item>
                 </div>
               </div>
@@ -202,7 +202,9 @@
                 <div class="col-4 flex items-center">
                   <div class="text-body1 text-black">
                     <span
-                      class="text-info q-mr-sm speech-input-select-id">{{ speechInputFields.monthlyOperatingCost.label }}</span>
+                      class="text-info q-mr-sm speech-input-select-id">{{
+                        speechInputFields.monthlyOperatingCost.label
+                      }}</span>
                     Betriebskosten mtl.
                   </div>
                 </div>
@@ -223,7 +225,7 @@
                       :options="costsOptions.monthlyOperatingCostKind" label="Art"
                       map-options
                       outlined
-                      square />
+                      square/>
                   </q-item>
                 </div>
               </div>
@@ -231,7 +233,9 @@
                 <div class="col-4 flex items-center">
                   <div class="text-body1 text-black">
                     <span
-                      class="text-info q-mr-sm speech-input-select-id">{{ speechInputFields.monthlyHeatingCost.label }}</span>
+                      class="text-info q-mr-sm speech-input-select-id">{{
+                        speechInputFields.monthlyHeatingCost.label
+                      }}</span>
                     Heizkosten mtl.
                   </div>
                 </div>
@@ -252,7 +256,7 @@
                       :options="costsOptions.monthlyHeatingCostKind" label="Art"
                       map-options
                       outlined
-                      square />
+                      square/>
                   </q-item>
                 </div>
               </div>
@@ -280,7 +284,7 @@
                       :options="costsOptions.depositKind" label="Art"
                       map-options
                       outlined
-                      square />
+                      square/>
                   </q-item>
                 </div>
               </div>
@@ -293,7 +297,7 @@
             <q-card-section>
               <div class="text-h6">Nutzung</div>
             </q-card-section>
-            <q-separator />
+            <q-separator/>
             <q-card-section>
               <div class="row">
                 <div class="col-4 flex items-center">
@@ -307,7 +311,7 @@
                       v-model="usageSelections.purpose"
                       :options="usageOptions.purpose" map-options
                       outlined
-                      square />
+                      square/>
                   </q-item>
                 </div>
               </div>
@@ -325,7 +329,7 @@
                       v-model="usageSelections.livingSpace"
                       :options="usageOptions.livingSpace" map-options
                       outlined
-                      square />
+                      square/>
                     <q-input
                       :ref="(el) => { speechInputFields.livingSpace.ref = el }"
                       v-model="speechInputFieldValues.livingSpace"
@@ -531,15 +535,19 @@ export default {
     // selection specific
     selectSpeechInputFieldManually(selectedSpeechInputFieldKey) {
       if (!this.speechInputFields[selectedSpeechInputFieldKey].ref.isProgrammaticFocus) {
-        console.log("select speech input field manually", selectedSpeechInputFieldKey, this.fieldSelectiveSpeechInputStore);
         this.selectSpeechInputField(selectedSpeechInputFieldKey);
       }
 
       this.speechInputFields[selectedSpeechInputFieldKey].ref.isProgrammaticFocus = false;
     },
     selectSpeechInputFieldBySpeechCommand(speechCmd) {
-      const selectedSpeechInputFieldKey = this.determineAffectedField(speechCmd);
-      this.selectSpeechInputFieldByKey(selectedSpeechInputFieldKey)
+      const result = this.determineAffectedField(speechCmd);
+      if (result?.key) {
+        this.selectSpeechInputFieldByKey(result.key)
+      }
+      if (result?.afterMatch && result?.afterMatch != "") {
+        this.$bus.emit("field-selective-speech-input_after-field-select-input", result.afterMatch);
+      }
     },
     selectSpeechInputFieldByKey(key) {
       if (key != null) {
@@ -552,20 +560,26 @@ export default {
       for (const key in this.speechInputFields) {
         if (this.speechInputFields.hasOwnProperty(key)) {
           const element = this.speechInputFields[key];
-          if (element.regex.test(speechCmd)) {
-            return key;
+          const match = speechCmd.match(element.regex);
+          if (match) {
+            const index = match.index;
+            const matchLength = match[0].length;
+            const afterMatch = speechCmd.slice(index + matchLength);
+
+            return {
+              key: key,
+              afterMatch: afterMatch.trim()
+            };
           }
         }
       }
       return null;
     },
     selectSpeechInputField(key) {
-      console.log("select speech input field", key);
       this.selectedSpeechInputField = key;
       this.isSpeechInputFieldSelected = true;
     },
     unselectSpeechInputField(evt) {
-      console.log("focus out", evt);
       if (
         evt.relatedTarget &&
         evt.relatedTarget.classList.contains("cmd-speech-input-toggle")
@@ -579,32 +593,26 @@ export default {
     },
     selectNextSpeechInputField() {
       const keys = Object.keys(this.speechInputFields)
-      if(this.previousSelectedSpeechInputField == null || keys.indexOf(this.previousSelectedSpeechInputField) == keys.length - 1)
-      {
+      if (this.previousSelectedSpeechInputField == null || keys.indexOf(this.previousSelectedSpeechInputField) == keys.length - 1) {
         this.selectSpeechInputFieldByKey(keys[0])
-      }
-      else {
+      } else {
         this.selectSpeechInputFieldByKey(keys[keys.indexOf(this.previousSelectedSpeechInputField) + 1])
       }
     },
     selectPreviousSpeechInputField() {
       const keys = Object.keys(this.speechInputFields)
-      if(this.previousSelectedSpeechInputField == null)
-      {
+      if (this.previousSelectedSpeechInputField == null) {
         this.selectSpeechInputFieldByKey(keys[0])
-      }
-      else {
+      } else {
         this.selectSpeechInputFieldByKey(keys[keys.indexOf(this.previousSelectedSpeechInputField)])
       }
     },
     // speech input
     selectedSpeechInputFieldInput(input) {
-      console.log("selected speech input field input", input, this.speechInputFields[this.selectedSpeechInputField]);
       this.speechInputFieldValues[this.selectedSpeechInputField] += input;
     },
     // cmd specific
     unselectSpeechInputFieldCmd(input) {
-      console.log("unselect speech input field", input, this.selectedSpeechInputField, this.speechInputFields[this.selectedSpeechInputField]);
       this.speechInputFieldValues[this.selectedSpeechInputField] += input;
       this.speechInputFields[this.selectedSpeechInputField].ref.blur();
     },

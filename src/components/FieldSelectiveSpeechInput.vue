@@ -84,6 +84,14 @@ export default {
       this.$i18n.locale = lang;
     }
   },
+  mounted(){
+    this.$bus.on("field-selective-speech-input_after-field-select-input", (transcript) => {
+      this.handleSpeechInput(transcript);
+    });
+  },
+  beforeUnmount() {
+    this.$bus.off("field-selective-speech-input_after-field-select-input");
+  },
   methods: {
     record() {
       this.isRecording = true;
@@ -119,7 +127,6 @@ export default {
         }
       }
 
-      console.log("next transkript", res)
       if (res?.nextTranscript?.trim() != "") {
         this.handleSpeechInput(res.nextTranscript)
       }
@@ -139,7 +146,6 @@ export default {
       } else if (res.commandType == recognizedCommandType.clearField) {
         this.$bus.emit("field-selective-speech-input_clear");
       } else if (res.commandType == recognizedCommandType.unselectField) {
-        console.log("unselect", res)
         this.$bus.emit("field-selective-speech-input_unselect", res.fieldInput);
       }
     },
