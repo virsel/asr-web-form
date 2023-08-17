@@ -76,37 +76,37 @@ export default async ({app}) => {
 
   // web speech asr
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = SpeechRecognition ? new SpeechRecognition() : false;
+  const webSpeechRecognition = SpeechRecognition ? new SpeechRecognition() : false;
   const startWebSpeechAsr = (lang, subscriber) => {
-    if (!recognition)
+    if (!webSpeechRecognition)
       return
 
-    recognition.lang = lang;
-    recognition.continuous = true;
-    recognition.start();
+    webSpeechRecognition.lang = lang;
+    webSpeechRecognition.continuous = true;
+    webSpeechRecognition.start();
 
-    recognition.onresult = (event) => {
+    webSpeechRecognition.onresult = (event) => {
       const current = event.resultIndex;
       // Get a transcript of what was said.
       const transcript = event.results[current][0].transcript;
       subscriber.next(transcript);
     };
 
-    recognition.onend = () => {
+    webSpeechRecognition.onend = () => {
       console.log("stopped recognition")
       subscriber.complete();
     };
   }
   const stopWebSpeechAsr = () => {
-    if (!recognition)
+    if (!webSpeechRecognition)
       return
-    recognition.stop();
+    webSpeechRecognition.stop();
   }
 
   app.config.globalProperties.$speechToText = {
     start: (lang = "de-DE", message = "") => {
       return new Observable(subscriber => {
-          if (recognition) {
+          if (webSpeechRecognition) {
             console.log("starting web speech asr...")
             startWebSpeechAsr(lang, subscriber)
           } else {
@@ -117,7 +117,7 @@ export default async ({app}) => {
       );
     },
     stop: () => {
-      if (recognition) {
+      if (webSpeechRecognition) {
         stopWebSpeechAsr()
       } else {
         stopInternAsr()
