@@ -1,41 +1,30 @@
-# Quasar App (quasar-project)
+# asr web form
 
-A Quasar Project
-
-## Install the dependencies
+## local
+install dependencies
 ```bash
 yarn
 # or
 npm install
 ```
-
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+start the app in development mode (hot-code reloading, error reporting, etc.)
 ```bash
 quasar dev
 ```
 
 
-### Lint the files
-```bash
-yarn lint
-# or
-npm run lint
+## container
+
+build:
+```
+docker build -t asr-web-form .
+```
+
+run:
+```
+docker run --name asr-web-form -p 8080:8080 asr-web-form
 ```
 
 
-### Format the files
-```bash
-yarn format
-# or
-npm run format
-```
 
 
-
-### Build the app for production
-```bash
-quasar build
-```
-
-### Customize the configuration
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).

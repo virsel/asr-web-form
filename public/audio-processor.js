@@ -6,7 +6,7 @@ class AudioProcessor extends AudioWorkletProcessor {
     this.speaking = false;
     this.silenceStart = null;
     this.debounceTime = 1;  // 1 second
-    this.connected = true;  // Add this flag
+    this.connected = true;
 
     // Handle messages from the main thread
     this.port.onmessage = (event) => {
@@ -29,7 +29,7 @@ class AudioProcessor extends AudioWorkletProcessor {
     const rms = Math.sqrt(input[0].reduce((acc, val) => acc + val * val, 0) / input[0].length);
 
     // If the volume exceeds a threshold, consider it as the speaker speaking
-    const threshold = 0.01;  // Adjust this value based on your needs
+    const threshold = 0.001;
     if (rms > threshold) {
       // Convert the audio data to 16-bit integers and add it to the buffer
       this.buffer.push(...Int16Array.from(input[0].map(n => n * 32767)));

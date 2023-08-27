@@ -8,9 +8,12 @@ export default async ({app}) => {
   let processor;
   let ws;
   let stream;
+  const host = process.env.WS_HOST || 'localhost';
   const startInternAsr = (subscriber) => {
-    ws = new WebSocket('ws://localhost:8001')
+    console.log("connect to ds server", `ws://${host}:8001...`)
+    ws = new WebSocket(`ws://${host}:8001`);
     ws.onopen = async () => {
+      console.log("connected")
       // Get access to the microphone
       stream = await navigator.mediaDevices.getUserMedia({audio: true});
 
